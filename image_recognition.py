@@ -18,15 +18,17 @@ from motor_control import µm_to_steps, update_speed, move_linear_stage
 draw_bounding_boxes = True
 record_camera0 = False
 record_camera1 = False
+record_camera2 = False
 
 record_dir0 = r"D:\camera0_pcb2_CFmicrowire_2025-04-01"
 record_dir1 = r"D:\camera1_pcb2_CFmicrowire_2025-04-01"
+record_dir2 = r"D:\camera2_pcb2_CFmicrowire_2025-04-01"
 
-video_writers = {0: None, 1: None}
-run_timestamps = {0: None, 1: None}
+video_writers = {0: None, 1: None, 2: None}  
+run_timestamps = {0: None, 1: None, 2: None}
 
 frames_per_still = 30
-frame_counts = {0: 0, 1: 0}
+frame_counts = {0: 0, 1: 0, 2: 0}
 
 extrude_done = False
 r_align_done = False
