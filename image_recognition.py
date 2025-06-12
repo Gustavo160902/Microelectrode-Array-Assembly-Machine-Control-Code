@@ -221,7 +221,9 @@ def open_camera(camera_index=0, model_path="best.pt"):
         annotated_frame = custom_annotate(results[0], frame)
 
         # 4) Recording logic
-        rec_flag = (camera_index==0 and record_camera0) or (camera_index==1 and record_camera1)
+        rec_flag = (camera_index==0 and record_camera0) or \
+                  (camera_index==1 and record_camera1) or \
+                  (camera_index==2 and record_camera2)
         if rec_flag:
             if video_writers[camera_index] is None:
                 run_timestamps[camera_index] = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -229,9 +231,12 @@ def open_camera(camera_index=0, model_path="best.pt"):
                 if camera_index==0:
                     os.makedirs(record_dir0,exist_ok=True)
                     video_path = os.path.join(record_dir0, f"camera{camera_index}_{run_timestamps[camera_index]}.avi")
-                else:
+                elif camera_index==1:
                     os.makedirs(record_dir1,exist_ok=True)
                     video_path = os.path.join(record_dir1, f"camera{camera_index}_{run_timestamps[camera_index]}.avi")
+                else:  # camera_index==2
+                    os.makedirs(record_dir2,exist_ok=True)
+                    video_path = os.path.join(record_dir2, f"camera{camera_index}_{run_timestamps[camera_index]}.avi")
                 video_writers[camera_index] = cv2.VideoWriter(video_path, fourcc, 20.0, (width, height))
                 print(f"[Camera {camera_index}] Recording started => {video_path}")
 
@@ -245,9 +250,14 @@ def open_camera(camera_index=0, model_path="best.pt"):
                         record_dir0,
                         f"frame_{fc}_camera{camera_index}_{run_timestamps[camera_index]}.jpg"
                     )
-                else:
+                elif camera_index==1:
                     still_path = os.path.join(
                         record_dir1,
+                        f"frame_{fc}_camera{camera_index}_{run_timestamps[camera_index]}.jpg"
+                    )
+                else:  # camera_index==2
+                    still_path = os.path.join(
+                        record_dir2, 
                         f"frame_{fc}_camera{camera_index}_{run_timestamps[camera_index]}.jpg"
                     )
                 cv2.imwrite(still_path, annotated_frame)
