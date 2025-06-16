@@ -89,9 +89,11 @@ def post_process_frame(frame):
     return adjusted
 
 pad_box_dict = {}  # e.g. {"pad1": (x1,y1,x2,y2), "pad2": ..., etc.}
+trench_start_dict = {}  # e.g. {"trenchstart1": (x1,y1,x2,y2), etc.}
+trench_stop_dict = {}   # e.g. {"trenchstop1": (x1,y1,x2,y2), etc.}
 
-def custom_annotate(results, img):
-    global pad_box_dict
+def custom_annotate(results, img, camera_index=0):
+    global pad_box_dict, trench_start_dict, trench_stop_dict
 
     if not draw_bounding_boxes:
         return img.copy()
@@ -101,6 +103,15 @@ def custom_annotate(results, img):
     names = results.names
 
     pad_boxes = []
+    trench_start_boxes = []
+    trench_stop_boxes = []
+
+    # Define allowed objects per camera
+    allowed_objects = {
+        0: ["Pad", "CF_Tip", "GC_Tip", "TrenchStop", "TrenchStart"],
+        1: ["CF_Tip", "GC_Tip"],
+        2: ["Clog"]
+    }
 
     # 1) gather bounding boxes
     for box in boxes:
@@ -108,32 +119,58 @@ def custom_annotate(results, img):
         class_name = names[cls_id]
         conf = float(box.conf[0])
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        
+        # Skip if this object type shouldn't be shown on this camera
+        if class_name not in allowed_objects[camera_index]:
+            continue
+
         center_y = (y1 + y2)/2
 
         if class_name == "Pad":
             pad_boxes.append((x1, y1, x2, y2, center_y, conf))
+        elif class_name == "TrenchStart":
+            trench_start_boxes.append((x1, y1, x2, y2, center_y, conf))
+        elif class_name == "TrenchStop":
+            trench_stop_boxes.append((x1, y1, x2, y2, center_y, conf))
         else:
             label = f"{class_name} {conf:.2f}"
             cv2.rectangle(annotated_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
             cv2.putText(annotated_img, label, (x1, y1 - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
 
-    # 2) sort the Pad boxes top->bottom (lowest center_y => bottom)
-    pad_boxes.sort(key=lambda b: b[4], reverse=True)
-    pad_index = 1
+    # Only process special boxes for camera 0
+    if camera_index == 0:
+        # Sort boxes top->bottom
+        pad_boxes.sort(key=lambda b: b[4], reverse=True)
+        trench_start_boxes.sort(key=lambda b: b[4], reverse=True)
+        trench_stop_boxes.sort(key=lambda b: b[4], reverse=True)
+        
+        # Process Pad boxes
+        for idx, (bx1, by1, bx2, by2, cy, conf) in enumerate(pad_boxes, 1):
+            label = f"pad{idx} {conf:.2f}"
+            pure_label = f"pad{idx}"
+            pad_box_dict[pure_label] = (bx1, by1, bx2, by2)
+            cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (255, 255, 0), 2)
+            cv2.putText(annotated_img, label, (bx1 + 3, by2 - 3),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
-    # 3) label them from pad8..pad1
-    for (bx1, by1, bx2, by2, cy, conf) in pad_boxes:
-        label = f"pad{pad_index} {conf:.2f}"
-        # store bounding box in a dictionary keyed by that pad label (like "pad8")
-        pure_label = f"pad{pad_index}"  
-        pad_box_dict[pure_label] = (bx1, by1, bx2, by2)  # store bounding box globally
+        # Process TrenchStart boxes
+        for idx, (bx1, by1, bx2, by2, cy, conf) in enumerate(trench_start_boxes, 1):
+            label = f"trenchstart{idx} {conf:.2f}"
+            pure_label = f"trenchstart{idx}"
+            trench_start_dict[pure_label] = (bx1, by1, bx2, by2)
+            cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (255, 255, 0), 2)
+            cv2.putText(annotated_img, label, (bx1 + 3, by2 - 3),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
-        pad_index += 1
-
-        cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (255, 255, 0), 2)
-        cv2.putText(annotated_img, label, (bx1 + 3, by2 - 3),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+        # Process TrenchStop boxes
+        for idx, (bx1, by1, bx2, by2, cy, conf) in enumerate(trench_stop_boxes, 1):
+            label = f"trenchstop{idx} {conf:.2f}"
+            pure_label = f"trenchstop{idx}"
+            trench_stop_dict[pure_label] = (bx1, by1, bx2, by2)
+            cv2.rectangle(annotated_img, (bx1, by1), (bx2, by2), (255, 255, 0), 2)
+            cv2.putText(annotated_img, label, (bx1 + 3, by2 - 3),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
     return annotated_img
 
@@ -217,10 +254,10 @@ def open_camera(camera_index=0, model_path="best.pt"):
             if pad_found is not None:
                 last_pad_box= pad_found
 
-        # 3) bounding box annotation
-        annotated_frame = custom_annotate(results[0], frame)
+        # 3) bounding box annotation (for display only) - pass camera_index
+        annotated_frame = custom_annotate(results[0], frame, camera_index)
 
-        # 4) Recording logic
+        # 4) Recording logic - use original processed frame without annotations
         rec_flag = (camera_index==0 and record_camera0) or \
                   (camera_index==1 and record_camera1) or \
                   (camera_index==2 and record_camera2)
@@ -240,7 +277,8 @@ def open_camera(camera_index=0, model_path="best.pt"):
                 video_writers[camera_index] = cv2.VideoWriter(video_path, fourcc, 20.0, (width, height))
                 print(f"[Camera {camera_index}] Recording started => {video_path}")
 
-            video_writers[camera_index].write(annotated_frame)
+            # Save clean frame without annotations
+            video_writers[camera_index].write(frame)
             fc = frame_counts[camera_index]
             if fc % frames_per_still==0:
                 if run_timestamps[camera_index] is None:
@@ -260,7 +298,8 @@ def open_camera(camera_index=0, model_path="best.pt"):
                         record_dir2, 
                         f"frame_{fc}_camera{camera_index}_{run_timestamps[camera_index]}.jpg"
                     )
-                cv2.imwrite(still_path, annotated_frame)
+                # Save clean still frame without annotations
+                cv2.imwrite(still_path, frame)
 
             frame_counts[camera_index]+=1
         else:
@@ -386,7 +425,7 @@ def extrude(target_pad_number=1, max_iterations=20, known_µm=None, tolerance_µ
 
     # 2) Validate we have required bounding boxes
     target_pad_key = f"pad{target_pad_number}"
-    target_pad_box = pad_box_dict.get(target_pad_key)
+    target_pad_box = pad_box_dict.get(target_pad_number)
     
     # For calibration we need two adjacent pads
     cal_pad1_key = f"pad{max(1, target_pad_number)}"  # Use target or one above
