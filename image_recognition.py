@@ -217,10 +217,10 @@ def open_camera(camera_index=0, model_path="best.pt"):
             if pad_found is not None:
                 last_pad_box= pad_found
 
-        # 3) bounding box annotation
+        # 3) bounding box annotation (for display only)
         annotated_frame = custom_annotate(results[0], frame)
 
-        # 4) Recording logic
+        # 4) Recording logic - use original processed frame without annotations
         rec_flag = (camera_index==0 and record_camera0) or \
                   (camera_index==1 and record_camera1) or \
                   (camera_index==2 and record_camera2)
@@ -240,7 +240,8 @@ def open_camera(camera_index=0, model_path="best.pt"):
                 video_writers[camera_index] = cv2.VideoWriter(video_path, fourcc, 20.0, (width, height))
                 print(f"[Camera {camera_index}] Recording started => {video_path}")
 
-            video_writers[camera_index].write(annotated_frame)
+            # Save clean frame without annotations
+            video_writers[camera_index].write(frame)
             fc = frame_counts[camera_index]
             if fc % frames_per_still==0:
                 if run_timestamps[camera_index] is None:
@@ -260,7 +261,8 @@ def open_camera(camera_index=0, model_path="best.pt"):
                         record_dir2, 
                         f"frame_{fc}_camera{camera_index}_{run_timestamps[camera_index]}.jpg"
                     )
-                cv2.imwrite(still_path, annotated_frame)
+                # Save clean still frame without annotations
+                cv2.imwrite(still_path, frame)
 
             frame_counts[camera_index]+=1
         else:
@@ -386,7 +388,7 @@ def extrude(target_pad_number=1, max_iterations=20, known_µm=None, tolerance_µ
 
     # 2) Validate we have required bounding boxes
     target_pad_key = f"pad{target_pad_number}"
-    target_pad_box = pad_box_dict.get(target_pad_key)
+    target_pad_box = pad_box_dict.get(target_pad_number)
     
     # For calibration we need two adjacent pads
     cal_pad1_key = f"pad{max(1, target_pad_number)}"  # Use target or one above
