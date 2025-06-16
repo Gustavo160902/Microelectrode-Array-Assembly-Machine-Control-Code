@@ -254,8 +254,8 @@ def open_camera(camera_index=0, model_path="best.pt"):
             if pad_found is not None:
                 last_pad_box= pad_found
 
-        # 3) bounding box annotation (for display only) - pass camera_index
-        annotated_frame = custom_annotate(results[0], frame, camera_index)
+        # 3) bounding box annotation
+        annotated_frame = custom_annotate(results[0], frame)
 
         # 4) Recording logic - use original processed frame without annotations
         rec_flag = (camera_index==0 and record_camera0) or \
