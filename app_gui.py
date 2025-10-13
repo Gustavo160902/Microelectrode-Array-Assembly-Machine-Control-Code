@@ -22,6 +22,9 @@ from motor_control import (
 
 from relay_control import (
     auto_connect_relay,
+    motor_forward, 
+    motor_backward,
+    motor_release,
     laser_relay_on,
     laser_relay_off
 )
@@ -153,9 +156,15 @@ def run_full_manual_loop():
 
     try:
         print("--- Starting Automated Routine ---")
+
+        motor_forward(20, timeout=30)
+        time.sleep(2)  # Wait for motor to move
+        motor_backward(20, timeout=30)
+        time.sleep(2)  # Wait for motor to move
+        motor_release()
         
         # Move everything to origin before we begin
-        return_to_origin()
+        """return_to_origin()
 
         for pad_num in range(1, PAD_COUNT+1):
             print(f"Automated Alignment on Pad #{pad_num}")
@@ -174,7 +183,7 @@ def run_full_manual_loop():
             laser_cut()
             
             # Return to origin after finishing this pad
-            return_to_origin()
+            return_to_origin()"""
 
         print("--- Automated Routine Completed ---")
 

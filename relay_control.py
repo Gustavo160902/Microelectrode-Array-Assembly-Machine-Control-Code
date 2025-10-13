@@ -1,6 +1,7 @@
 # relay_control.py
 
 import serial
+import time
 from tkinter import messagebox
 from motor_control import serial_lock, send_command, find_port
 
@@ -41,5 +42,99 @@ def laser_relay_off():
     global relay_ser
     if relay_ser:
         send_command(relay_ser, "Laser_Relay_Off", "Relay Controller")
+    else:
+        messagebox.showerror("Error", "Not connected to relay device.")
+
+def motor_forward(steps=100, wait_for_completion=True, timeout=30):
+    """Move the stepper motor forward by the specified number of steps.
+    
+    Args:
+        steps (int): Number of steps to move forward (default: 100, max: 10000)
+        wait_for_completion (bool): Wait for motor to complete before returning (default: True)
+        timeout (float): Maximum seconds to wait for completion (default: 30)
+    """
+    global relay_ser
+    if not relay_ser:
+        messagebox.showerror("Error", "Not connected to relay device.")
+        return False
+    
+    command = f"Motor_Forward_{steps}"
+    
+    if wait_for_completion:
+        # Send command and wait for completion message
+        with serial_lock:
+            relay_ser.write((command + '\n').encode())
+            print(f"Sent command to Relay Controller: {command}")
+            
+            start_time = time.time()
+            response_buffer = ""
+            
+            while time.time() - start_time < timeout:
+                if relay_ser.in_waiting > 0:
+                    data = relay_ser.read(relay_ser.in_waiting).decode()
+                    response_buffer += data
+                    print(f"Relay Controller response: {data.strip()}")
+                    
+                    # Check if we got the completion message
+                    if "Motor forward complete" in response_buffer:
+                        print("Motor forward movement completed")
+                        return True
+                
+                time.sleep(0.1)  # Small delay between checks
+            
+            print(f"Warning: Motor forward command timed out after {timeout}s")
+            return False
+    else:
+        send_command(relay_ser, command, "Relay Controller")
+        return True
+
+def motor_backward(steps=100, wait_for_completion=True, timeout=30):
+    """Move the stepper motor backward by the specified number of steps.
+    
+    Args:
+        steps (int): Number of steps to move backward (default: 100, max: 10000)
+        wait_for_completion (bool): Wait for motor to complete before returning (default: True)
+        timeout (float): Maximum seconds to wait for completion (default: 30)
+    """
+    global relay_ser
+    if not relay_ser:
+        messagebox.showerror("Error", "Not connected to relay device.")
+        return False
+    
+    command = f"Motor_Backward_{steps}"
+    
+    if wait_for_completion:
+        # Send command and wait for completion message
+        with serial_lock:
+            relay_ser.write((command + '\n').encode())
+            print(f"Sent command to Relay Controller: {command}")
+            
+            start_time = time.time()
+            response_buffer = ""
+            
+            while time.time() - start_time < timeout:
+                if relay_ser.in_waiting > 0:
+                    data = relay_ser.read(relay_ser.in_waiting).decode()
+                    response_buffer += data
+                    print(f"Relay Controller response: {data.strip()}")
+                    
+                    # Check if we got the completion message
+                    if "Motor backward complete" in response_buffer:
+                        print("Motor backward movement completed")
+                        return True
+                
+                time.sleep(0.1)  # Small delay between checks
+            
+            print(f"Warning: Motor backward command timed out after {timeout}s")
+            return False
+    else:
+        send_command(relay_ser, command, "Relay Controller")
+        return True
+
+def motor_release():
+    """Release the stepper motor to stop holding torque and eliminate idle pulsing."""
+    global relay_ser
+    if relay_ser:
+        send_command(relay_ser, "Motor_Release", "Relay Controller")
     else:
         messagebox.showerror("Error", "Not connected to relay device.")
