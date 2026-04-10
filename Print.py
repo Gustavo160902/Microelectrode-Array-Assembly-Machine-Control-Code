@@ -449,7 +449,7 @@ def print_origin():
     move_linear_stage(x, '-', 29650, wait_for_stop=True, max_wait=30.0)
 
     time.sleep(1.0)
-    move_linear_stage(z, '+', 22360.5, wait_for_stop=True, max_wait=30.0)
+    move_linear_stage(z, '+', 20705, wait_for_stop=True, max_wait=30.0)
     # To be replaced with Z probe
 
 # Safe position function
