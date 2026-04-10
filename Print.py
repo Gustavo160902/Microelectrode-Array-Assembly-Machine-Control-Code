@@ -29,22 +29,27 @@ z = 'Z'
 
 tapl = 5000.0   # Z tap depth 
 stp  = 1000.0   # Step-over between parallel lines
-delay = 0.5       # Dispenser settle time
+delay = 0.5     # Dispenser settle time
 
 x_coord, y_coord, z_coord = None, None, None # Current coordinates
-angle_dir, angle_axis, t_len = None, None, None# Angle based direction and axis, trace length
+angle_dir, angle_axis, t_len = None, None, None # Angle based direction and axis, trace length
 counter = 0 # Feature counter for next feature calculation
 temp_location = None
 temp_l = None
 temp_w = None
 
-#print_z_coord = probe_z_coord - print_gap # Z coordinate for printing, set after probing based on print_gap
-wipe_y = 2123.0 # Y Position for testing, replace with actual wipe position, used for wiping probe after Z probe to prevent smearing ink on PCB during print process
-probe_y = 2342.0 #  Y Position for testing, replace with actual probe position
-print_home = [74410.0, 2540840.0, 2612907.5, 4022.59] # X, Y, Z, R coordinate for tarting point for print process, probe to find Z
-print_origin = [74410.0, 2540840.0, 2612907.5, 4022.59] # X, Y, Z, R coordinate for tarting point for print process, probe to find Z
-print_z = None # Z coordinate for printing, set after probing based on print_gap
+wipe_y = 2123.0
+probe_y = 2342.0
+print_home = [74410.0, 2540840.0, 2612907.5, 4022.59] # X, Y, Z, R coordinate for starting point
+print_origin_coords = [74410.0, 2540840.0, 2612907.5, 4022.59] # X, Y, Z, R coordinate for starting point
+print_z = None
 
+# Safe position — fill in after jogging to safe position between stations
+safe_position = {
+    'X': 0.0,  # fill in
+    'Y': 0.0,  # fill in
+    'Z': 0.0   # fill in
+}
 
 # BASIC MOVES  
 # Use for testing
@@ -71,7 +76,7 @@ def tap():
     down(tapl)
     up(tapl)
 
-# Trace Dictionay, Don't modify - Phillipe's edit
+# Trace Dictionary, Don't modify - Phillipe's edit
 # If angle is negative line has negative slope, else positive slope
 # Lengths are in mm, use conversion method
 traces = {
@@ -96,15 +101,15 @@ traces = {
 
 pad_types = {
 
-    "cs": {"l": 0.75, "w": 0.38}, # Dimensions of cable conncetor short pads, mm
+    "cs": {"l": 0.75, "w": 0.38}, # Dimensions of cable connector short pads, mm
 
-    "cl": {"l": 1, "w": 0.38}, # Dimensions of cable conncetor long pads, mm
+    "cl": {"l": 1, "w": 0.38}, # Dimensions of cable connector long pads, mm
 
     "me": {"l": 1.2, "w": 0.55}    # Dimensions of electrode pads, mm
     
 }
 
-pad_positions = [0,1,2,3,4,5,6,7] # Positions of pads around the center of the print area, starting from top right and going clockwise
+pad_positions = [0,1,2,3,4,5,6,7]
 
 pads = {
     
@@ -200,7 +205,7 @@ def print_traces(traces_dict):
         next_feature(counter, x_coord, y_coord, 1000)
              
 def print_trace(trace_dict, index):
-    global counter,angle_dir, angle_axis, t_len               
+    global counter, angle_dir, angle_axis, t_len               
     
     for key, value in (trace_dict.get(index)).items():
         if key.find("a") != -1:
@@ -214,8 +219,12 @@ def print_trace(trace_dict, index):
             
             if angle_axis.find('d') == -1:
                 nordson_on()
-                update_speed(15) #ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
-                move_linear_stage(angle_axis, angle_dir, t_len, wait_for_stop=True, max_wait=30.0)
+                update_speed(15) # ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
+                # move 90% with nordson on, turn off before stopping to avoid dot at end
+                move_linear_stage(angle_axis, angle_dir, t_len * 0.9, wait_for_stop=True, max_wait=30.0)
+                nordson_off()
+                # finish last 10% with nordson off — keeps momentum, no dot
+                move_linear_stage(angle_axis, angle_dir, t_len * 0.1, wait_for_stop=True, max_wait=30.0)
                 
                 angle_dir, angle_axis, t_len = None, None, None
 
@@ -264,13 +273,11 @@ def angle_handler(angle):
   
 # Don't modify - Phillipe's edit
 def diagonal_handler(angle, t_len, div):
-    # Convert angle to radians
     
     nordson_off() # Originally was off
 
     theta = math.radians(abs(angle))
 
-    # Calculate dx and dy based on the angle
     dx = t_len * math.cos(theta)
     dy = t_len * math.sin(theta)
 
@@ -283,7 +290,6 @@ def diagonal_handler(angle, t_len, div):
         for i in range(div):
             
             move_linear_stage(x, angle_dir[0], xstp, wait_for_stop=True, max_wait=30.0)
-        
             move_linear_stage(y, angle_dir[1], ystp, wait_for_stop=True, max_wait=30.0)
             
 def print_pad(pad_dict, pad_type, position):
@@ -293,7 +299,6 @@ def print_pad(pad_dict, pad_type, position):
     nordson_on()
     pad_handler(pad_dict, pad_type, position)
     nordson_off()
-    
 
 def pad_handler(pad_dict, pad_type, position):
     
@@ -305,7 +310,6 @@ def pad_handler(pad_dict, pad_type, position):
     update_speed(7)
 
     if position == 0:
-        
         right(width/2)
         front(length)
         left(width)
@@ -397,7 +401,6 @@ def Z_probe():
         
 # Don't modify - Phillipe's edit
 def r_limit():
-         #Successfully created a diagonal
     move_linear_stage('r', '+', 100, wait_for_stop=False, max_wait=30.0)
     state = r_calibrate()
     if state == "R limit":
@@ -438,7 +441,6 @@ def print_origin():
     z_home()
     y_home()
     x_home()
-    
 
     time.sleep(1.0)
     move_linear_stage(y, '-', 23790, wait_for_stop=True, max_wait=30.0)
@@ -450,24 +452,59 @@ def print_origin():
     move_linear_stage(z, '+', 22360.5, wait_for_stop=True, max_wait=30.0)
     # To be replaced with Z probe
 
+# Safe position function
+def go_to_safe_position():
+    """Move to safe position for easy PCB access between stations."""
+    update_speed(50)
+    for ax in ['X', 'Y', 'Z']:
+        current_pos = get_current_position(ax)
+        diff = safe_position[ax] - current_pos
+        direction = '+' if diff >= 0 else '-'
+        move_linear_stage(ax, direction, abs(diff), wait_for_stop=True, max_wait=30.0)
+    print("At safe position.")
+
+# Full assembly sequence
+def full_sequence():
+    """Full PCB print and glue sequence."""
+    print("Starting full sequence...")
+
+    print_pcb()
+
+    return_to_origin()
+
+    # Rotate r -90 to simulate going to next station
+    move_linear_stage('r', '-', 90, wait_for_stop=True, max_wait=30.0)
+
+    # Rotate r back +90
+    move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
+
+    # Move to glue station
+    move_linear_stage('Z', '-', 6000, wait_for_stop=True, max_wait=30.0)
+    move_linear_stage('X', '+', 11043, wait_for_stop=True, max_wait=30.0)
+
+    glue_sequence()
+
+    return_to_origin()
+
+    print("Full sequence complete.")
+
 # Add code into function to test it using the gui "Print tester" button
 def print_tester():
-    
     #print_trace(traces, 8)
     #print_traces(traces)
     print_pcb()
-    
+
 # GLUE DROP & SEQUENCE
 def glue_drop():
     """Dispense glue then retract slightly to stop drip."""
-    motor_backward(steps=7.3)  # Dispense glue, adjust steps as needed for desired drop size
+    motor_backward(steps=7)
     time.sleep(5.0)  # Wait for glue to dispense
-    motor_forward(steps=7.0)  # Retract to prevent dripping
+    motor_forward(steps=7)  # Retract to prevent dripping
     print("Glue drop complete.")
     motor_release()
 
 def glue_sequence():
-    """Glue drop sequence at 1000µm intervals left up to 8000µm."""
+    """Glue drop sequence at 1000µm intervals right up to 8000µm."""
     print("Starting glue sequence...")
     update_speed(50)
     
@@ -478,5 +515,4 @@ def glue_sequence():
         glue_drop()
         down(3000)
     
-    # return_to_origin()
     print("Glue sequence complete.")
