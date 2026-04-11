@@ -219,12 +219,9 @@ def print_trace(trace_dict, index):
             
             if angle_axis.find('d') == -1:
                 nordson_on()
-                update_speed(18) # ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
-                # move 98% with nordson on, turn off before stopping to avoid dot at end
-                move_linear_stage(angle_axis, angle_dir, t_len * 0.98, wait_for_stop=False, max_wait=30.0)
-                nordson_off()
-                # finish last 2% with nordson off — keeps momentum, no dot
-                move_linear_stage(angle_axis, angle_dir, t_len * 0.02, wait_for_stop=True, max_wait=30.0)
+                update_speed(17) # ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
+                move_linear_stage(angle_axis, angle_dir, t_len, wait_for_stop=True, max_wait=30.0)
+                nordson_off()  # turn off at end of linear, before diagonal
                 
                 angle_dir, angle_axis, t_len = None, None, None
 
@@ -274,7 +271,7 @@ def angle_handler(angle):
 # Don't modify - Phillipe's edit
 def diagonal_handler(angle, t_len, div):
     
-    nordson_off() # Originally was off
+    # nordson_off() — moved to end of linear move in print_trace
 
     theta = math.radians(abs(angle))
 
