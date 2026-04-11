@@ -221,7 +221,7 @@ def print_trace(trace_dict, index):
                 nordson_on()
                 update_speed(15) # ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
                 # move 90% with nordson on, turn off before stopping to avoid dot at end
-                move_linear_stage(angle_axis, angle_dir, t_len * 0.9, wait_for_stop=True, max_wait=30.0)
+                move_linear_stage(angle_axis, angle_dir, t_len * 0.9, wait_for_stop=False, max_wait=30.0)
                 nordson_off()
                 # finish last 10% with nordson off — keeps momentum, no dot
                 move_linear_stage(angle_axis, angle_dir, t_len * 0.1, wait_for_stop=True, max_wait=30.0)
@@ -446,7 +446,7 @@ def print_origin():
     move_linear_stage(y, '-', 23790, wait_for_stop=True, max_wait=30.0)
     
     time.sleep(1.0)
-    move_linear_stage(x, '-', 29650, wait_for_stop=True, max_wait=30.0)
+    move_linear_stage(x, '-', 29350, wait_for_stop=True, max_wait=30.0)
 
     time.sleep(1.0)
     move_linear_stage(z, '+', 20705, wait_for_stop=True, max_wait=30.0)
