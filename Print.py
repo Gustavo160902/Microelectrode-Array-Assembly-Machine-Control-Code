@@ -438,19 +438,17 @@ def z_home():
         print(f"Z home position set at {print_home[2]}")    
     
 def print_origin():
-    z_home()
-    y_home()
-    x_home()
-
-    time.sleep(1.0)
-    move_linear_stage(y, '-', 23790, wait_for_stop=True, max_wait=30.0)
-    
-    time.sleep(1.0)
-    move_linear_stage(x, '-', 29350, wait_for_stop=True, max_wait=30.0)
-
-    time.sleep(1.0)
-    move_linear_stage(z, '+', 20705, wait_for_stop=True, max_wait=30.0)
-    # To be replaced with Z probe
+    # Commented out for simpler testing — machine starts from current position
+    # z_home()
+    # y_home()
+    # x_home()
+    # time.sleep(1.0)
+    # move_linear_stage(y, '-', 23790, wait_for_stop=True, max_wait=30.0)
+    # time.sleep(1.0)
+    # move_linear_stage(x, '-', 29350, wait_for_stop=True, max_wait=30.0)
+    # time.sleep(1.0)
+    # move_linear_stage(z, '+', 20705, wait_for_stop=True, max_wait=30.0)
+    pass
 
 # Safe position function
 def go_to_safe_position():
