@@ -220,11 +220,11 @@ def print_trace(trace_dict, index):
             if angle_axis.find('d') == -1:
                 nordson_on()
                 update_speed(18) # ORIGINAL WAS 20, adjust for better print quality/speed tradeoff
-                # move 90% with nordson on, turn off before stopping to avoid dot at end
-                move_linear_stage(angle_axis, angle_dir, t_len * 0.9, wait_for_stop=False, max_wait=30.0)
+                # move 98% with nordson on, turn off before stopping to avoid dot at end
+                move_linear_stage(angle_axis, angle_dir, t_len * 0.98, wait_for_stop=False, max_wait=30.0)
                 nordson_off()
-                # finish last 10% with nordson off — keeps momentum, no dot
-                move_linear_stage(angle_axis, angle_dir, t_len * 0.1, wait_for_stop=True, max_wait=30.0)
+                # finish last 2% with nordson off — keeps momentum, no dot
+                move_linear_stage(angle_axis, angle_dir, t_len * 0.02, wait_for_stop=True, max_wait=30.0)
                 
                 angle_dir, angle_axis, t_len = None, None, None
 
