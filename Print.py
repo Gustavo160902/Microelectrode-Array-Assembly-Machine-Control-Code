@@ -509,3 +509,47 @@ def glue_sequence():
     # return_to_origin()
     print("Glue sequence complete.")
 
+# Fill electrode pads with metal ink after wire placement
+def fill_electrode_pads():
+    """Raster fill electrode pads with metal ink."""
+    length = mm_to_um(pad_types.get("me").get("l"))  # 1200µm
+    width = mm_to_um(pad_types.get("me").get("w"))   # 550µm
+    fill_len = length - 100  # avoid overflow
+    passes = int(width / 1000)
+
+    update_speed(17)
+
+    for i in range(passes):
+        nordson_on()
+        front(fill_len)
+        nordson_off()
+        left(1000)
+        nordson_on()
+        back(fill_len)
+        nordson_off()
+        if i < passes - 1:
+            left(1000)
+
+# Full assembly sequence
+def full_sequence():
+    """Print traces, wait for wire placement, fill electrode pads."""
+    print("Starting full sequence...")
+
+    # Step 1 — print traces
+    print_tester()
+
+    # Step 2 — rotate -90 to placement station
+    update_speed(50)
+    move_linear_stage('r', '-', 90, wait_for_stop=True, max_wait=30.0)
+
+    # Step 3 — wait 30s for wire placement
+    print("Waiting 30s for wire placement...")
+    time.sleep(30)
+
+    # Step 4 — rotate +90 back to print station
+    move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
+
+    # Step 5 — fill electrode pads
+    fill_electrode_pads()
+
+    print("Full sequence complete.")
