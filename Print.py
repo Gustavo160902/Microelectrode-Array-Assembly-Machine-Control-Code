@@ -404,6 +404,11 @@ def r_limit():
         rot = get_current_position("r")
         print(rot)
 
+def r_corrector():  
+    r_limit()
+    time.sleep(1)
+    move_linear_stage('r', '-', 4, wait_for_stop=False, max_wait=30.0)
+
 def x_home():
     global print_home
 
