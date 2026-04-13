@@ -34,13 +34,16 @@ from relay_control import (
     
 )
 
-from print import (
+from Print import (
     glue_sequence,
     print_tester,
     r_limit,
+    r_corrector,
     Z_probe,
     get_coord
 )
+
+from assembly import run_full_assembly
 
 import image_recognition
 from image_recognition import (
@@ -145,6 +148,17 @@ def wait_for_x_align_done(poll_interval=0.1):
     """
     while not image_recognition.x_align_done:
         time.sleep(poll_interval)
+
+# Test extrude and alignment for one pad only — no laser cut
+def test_extrude_align():
+    threading.Thread(target=_test_extrude_align_thread).start()
+
+def _test_extrude_align_thread():
+    extrude(1)
+    wait_for_extrude_done()
+    r_align()
+    wait_for_r_align_done()
+    print("Extrude and align test complete.")
 
 def laser_cut():
     try:
@@ -530,16 +544,21 @@ def launch_gui():
     tk.Button(root, text="Get Coordinate", command=get_coord).pack(pady=11)
 
      # Button: Test Diagonal Move
-    tk.Button(root, text="R calibrate", command=r_limit).pack(pady=11)
+    tk.Button(root, text="R calibrate", command=r_corrector).pack(pady=11)
     
      # Button: Test Diagonal Move
     tk.Button(root, text="Z calibrate", command=Z_probe).pack(pady=11)
   
-    tk.Button(root, text="Print Tester", command= print_tester).pack(pady=11)
+    tk.Button(root, text="Print Tester", command=print_tester).pack(pady=11)
     
     # Button: Glue test 
-    tk.Button(root, text="Glue test", command= glue_sequence).pack(pady=11)
+    tk.Button(root, text="Glue test", command=glue_sequence).pack(pady=11)
 
+    # Button: Full Assembly
+    tk.Button(root, text="Full Assembly", command=run_full_assembly).pack(pady=11)
+
+    # Button: Test Extrude & Align
+    tk.Button(root, text="Test Extrude & Align", command=test_extrude_align).pack(pady=5)
 
     root.mainloop()
 
