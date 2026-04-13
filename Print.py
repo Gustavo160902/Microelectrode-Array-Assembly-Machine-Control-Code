@@ -458,28 +458,47 @@ def go_to_safe_position():
         move_linear_stage(ax, direction, abs(diff), wait_for_stop=True, max_wait=30.0)
     print("At safe position.")
 
-# Full assembly sequence
+def fill_electrode_pads():
+    """Fill electrode pads with metal ink after wire placement."""
+    length = mm_to_um(pad_types.get("me").get("l"))  # 1200µm
+    width = mm_to_um(pad_types.get("me").get("w"))   # 550µm
+    fill_len = length - 100  # avoid overflow
+    passes = int(width / 1000)
+
+    update_speed(17)
+
+    for i in range(passes):
+        nordson_on()
+        front(fill_len)
+        nordson_off()
+        left(1000)
+        nordson_on()
+        back(fill_len)
+        nordson_off()
+        if i < passes - 1:
+            left(1000)
+
 def full_sequence():
-    """Full PCB print and glue sequence."""
+    """Full PCB print, wire placement and fill sequence."""
     print("Starting full sequence...")
 
+    # Step 1 — print traces
     print_pcb()
 
-    return_to_origin()
-
-    # Rotate r -90 to simulate going to next station
+    # Step 2 — rotate -90 to placement station
+    update_speed(50)
     move_linear_stage('r', '-', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Rotate r back +90
+    # Step 3 — wait 30s for wire placement
+    print("Waiting 30s for wire placement...")
+    time.sleep(30)
+
+    # Step 4 — rotate +90 back to print station
     move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Move to glue station
-    move_linear_stage('Z', '-', 6000, wait_for_stop=True, max_wait=30.0)
-    move_linear_stage('X', '+', 11043, wait_for_stop=True, max_wait=30.0)
-
-    glue_sequence()
-
-    return_to_origin()
+    # Step 5 — fill electrode pads
+    print_origin()
+    fill_electrode_pads()
 
     print("Full sequence complete.")
 
