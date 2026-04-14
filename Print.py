@@ -542,9 +542,9 @@ def full_sequence():
     update_speed(50)
     move_linear_stage('r', '-', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Step 3 — wait 30s for wire placement
-    print("Waiting 30s for wire placement...")
-    time.sleep(30)
+    # Step 3 — wait 20 seconds for testing
+    print("Waiting 20 seconds for wire placement...")
+    time.sleep(20)
 
     # Step 4 — rotate +90 back to print station
     move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
