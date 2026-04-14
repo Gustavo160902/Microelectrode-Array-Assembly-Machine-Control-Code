@@ -535,21 +535,34 @@ def full_sequence():
     """Print traces, wait for wire placement, fill electrode pads."""
     print("Starting full sequence...")
 
-    # Step 1 — print traces
+    # Step 1 — calibrate and print traces
     print_tester()
 
-    # Step 2 — rotate -90 to placement station
+    # Step 2 — return to home X Y Z
+    z_home()
+    y_home()
+    x_home()
+
+    # Step 3 — rotate -90 to placement station
     update_speed(50)
     move_linear_stage('r', '-', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Step 3 — wait 20 seconds for testing
+    # Step 4 — wait 20 seconds for testing
     print("Waiting 20 seconds for wire placement...")
     time.sleep(20)
 
-    # Step 4 — rotate +90 back to print station
+    # Step 5 — adjust axes
+    move_linear_stage(x, '-', 5000, wait_for_stop=True, max_wait=30.0)
+    move_linear_stage(y, '-', 5000, wait_for_stop=True, max_wait=30.0)
+    move_linear_stage(z, '+', 5000, wait_for_stop=True, max_wait=30.0)
+
+    # Step 6 — rotate +90 back to print station
     move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Step 5 — fill electrode pads
+    # Step 7 — calibrate again
+    calibrate()
+
+    # Step 8 — fill electrode pads
     fill_electrode_pads()
 
     print("Full sequence complete.")
