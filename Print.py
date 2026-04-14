@@ -515,14 +515,15 @@ def fill_electrode_pads():
     update_speed(17)
 
     for i in range(8):
-        if i > 0:
-            right(1000)
         nordson_on()
         if i % 2 == 0:
-            front(300)
+            back(1000)
         else:
-            back(300)
+            front(1000)
         nordson_off()
+        down(2000)
+        right(1000)
+        up(2000)
 
 # Full assembly sequence
 def full_sequence():
@@ -558,11 +559,5 @@ def full_sequence():
 
     # Step 8 — fill electrode pads
     fill_electrode_pads()
-
-    # Step 9 — return to home and park
-    z_home()
-    y_home()
-    x_home()
-    move_linear_stage('r', '-', 30, wait_for_stop=True, max_wait=30.0)
 
     print("Full sequence complete.")
