@@ -63,3 +63,11 @@ def run_full_assembly():
     fill_electrode_pads()
 
     print("Full assembly complete.")
+
+
+# # assembly.py
+
+# from print import full_sequence
+
+# def run_full_assembly():
+#     full_sequence()
