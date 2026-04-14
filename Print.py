@@ -559,8 +559,8 @@ def full_sequence():
     # Step 6 — rotate +90 back to print station
     move_linear_stage('r', '+', 90, wait_for_stop=True, max_wait=30.0)
 
-    # Step 7 — calibrate again
-    calibrate()
+    # Step 7 — go back to print origin (same starting point as traces)
+    print_origin()
 
     # Step 8 — fill electrode pads
     fill_electrode_pads()
