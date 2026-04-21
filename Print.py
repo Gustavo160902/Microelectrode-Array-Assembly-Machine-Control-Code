@@ -482,8 +482,13 @@ def print_tester():
     #print_trace(traces, 8)
     #print_traces(traces)
     #print_pcb()
-    calibrate()
-    print_pcb()
+    # calibrate()
+    # print_pcb()
+    update_speed(1)
+    move_linear_stage('t', '+', 2000, wait_for_stop=True, max_wait=60.0)
+    move_linear_stage('t', '-', 2000, wait_for_stop=True, max_wait=60.0)
+    move_linear_stage('t', '+', 2000, wait_for_stop=True, max_wait=60.0)
+    move_linear_stage('t', '-', 2000, wait_for_stop=True, max_wait=60.0)
        
 # GLUE DROP & SEQUENCE
 def glue_drop():
